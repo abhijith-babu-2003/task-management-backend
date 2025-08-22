@@ -3,6 +3,7 @@ import Column from "../models/ColumnSchema.js";
 import Task from "../models/TaskSchema.js";
 import Board from "../models/BoardSchema.js";
 import StatusCode from "../Config/StatusCode.js";
+import type mongoose from "mongoose";
 
 interface AuthRequest extends Request {
   user?: { id: string };
@@ -48,7 +49,7 @@ export const createColumn = async (
 
     await column.save();
 
-    board.columns.push(column._id);
+    board.columns.push(column._id as mongoose.Types.ObjectId);
     await board.save();
 
     res.status(StatusCode.CREATED).json({

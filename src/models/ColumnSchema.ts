@@ -48,7 +48,7 @@ const ColumnSchema: Schema = new Schema(
 
 ColumnSchema.index({ board: 1, order: 1 });
 
-ColumnSchema.virtual('taskCount').get(function () {
+ColumnSchema.virtual('taskCount').get(function (this: IColumn) {
   return this.tasks ? this.tasks.length : 0;
 });
 

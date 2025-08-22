@@ -3,10 +3,12 @@ import Task, { type IComment, type ITask } from "../models/TaskSchema.js";
 import Column from "../models/ColumnSchema.js";
 import Board from "../models/BoardSchema.js";
 import StatusCode from "../Config/StatusCode.js";
+import { Types } from "mongoose";
 
 interface AuthRequest extends Request {
   user?: { id: string };
 }
+
 
 import mongoose from "mongoose";
 
@@ -55,7 +57,7 @@ export const createTask = async (
 
     await task.save();
 
-    column.tasks.push(task._id);
+    column.tasks.push(task._id as Types.ObjectId);
     await column.save();
 
     const populatedTask = await Task.findById(task._id)
@@ -94,7 +96,7 @@ export const updateTask = async (
     if (description !== undefined) updateData.description = description;
     if (priority) updateData.priority = priority;
     if (dueDate !== undefined)
-      updateData.dueDate = dueDate ? new Date(dueDate) : undefined;
+      updateData.dueDate = dueDate ? new Date(dueDate) : undefined as unknown as Date;
     if (tags !== undefined) updateData.tags = tags;
     if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
 
@@ -286,7 +288,7 @@ export const moveTask = async (
       await oldColumn.save();
     }
 
-    newColumn.tasks.push(task._id);
+    newColumn.tasks.push(task._id as Types.ObjectId);
     await newColumn.save();
 
     task.column = newColumnId;

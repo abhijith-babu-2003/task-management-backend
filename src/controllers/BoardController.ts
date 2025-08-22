@@ -2,7 +2,6 @@ import type { Request, Response } from "express";
 import Board, { type IBoard } from "../models/BoardSchema.js";
 import Column from "../models/ColumnSchema.js";
 import Task from "../models/TaskSchema.js";
-import BoardInvite, { type IBoardInvite } from "../models/BoardInviteSchema.js";
 import mongoose, { Types } from "mongoose";
 import StatusCode from "../Config/StatusCode.js";
 
@@ -250,7 +249,6 @@ export const deleteBoard = async (req: AuthRequest, res: Response): Promise<void
 
     await Task.deleteMany({ board: new Types.ObjectId(boardId) });
     await Column.deleteMany({ board: new Types.ObjectId(boardId) });
-    await BoardInvite.deleteMany({ board: new Types.ObjectId(boardId) } as any); // ✅ cast fix
     await Board.findByIdAndDelete(boardId);
 
     res.status(StatusCode.OK).json({ message: "Board deleted successfully" });
