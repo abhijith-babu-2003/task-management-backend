@@ -39,9 +39,8 @@ const BoardSchema: Schema = new Schema({
 BoardSchema.index({ owner: 1 });
 BoardSchema.index({ members: 1 });
 
-
-BoardSchema.virtual('memberCount').get(function() {
-  return this.members ? this.members.length : 0;
-});
+BoardSchema.methods.memberCount = function (): number {
+  return this.members?.length ?? 0;
+};
 
 export default mongoose.model<IBoard>('Board', BoardSchema);

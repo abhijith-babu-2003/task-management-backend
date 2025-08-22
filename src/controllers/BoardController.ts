@@ -39,16 +39,12 @@ export const createBoard = async (
   const { name } = req.body;
 
   if (!name?.trim()) {
-    res
-      .status(StatusCode.BAD_REQUEST)
-      .json({ message: "Board name is required" });
+    res.status(StatusCode.BAD_REQUEST).json({ message: "Board name is required" });
     return;
   }
 
   if (!req.user?.id) {
-    res
-      .status(StatusCode.UNAUTHORIZED)
-      .json({ message: "User authentication required" });
+    res.status(StatusCode.UNAUTHORIZED).json({ message: "User authentication required" });
     return;
   }
 
@@ -78,7 +74,8 @@ export const createBoard = async (
 
     const columns = await Column.insertMany(columnsToInsert);
 
-    savedBoard.columns = columns.map((col) => col._id);
+    // ✅ cast _id properly
+    savedBoard.columns = columns.map((col) => col._id as Types.ObjectId);
     await savedBoard.save();
 
     const populatedBoard = (await Board.findById(savedBoard._id)
@@ -91,9 +88,7 @@ export const createBoard = async (
       .populate<{ members: IBoardMember[] }>("members", "username email")
       .lean()) as unknown as IPopulatedBoard;
 
-    if (!populatedBoard) {
-      throw new Error("Failed to retrieve created board");
-    }
+    if (!populatedBoard) throw new Error("Failed to retrieve created board");
 
     const responseData = {
       ...populatedBoard,
@@ -116,20 +111,13 @@ export const createBoard = async (
       } catch {}
     }
 
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    const errorDetails = {
+    res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
       message: "Error creating board",
-      error: errorMessage,
-      ...(process.env.NODE_ENV === "development" && {
-        stack: error instanceof Error ? error.stack : undefined,
-        name: error instanceof Error ? error.name : undefined,
-      }),
-    };
-
-    res.status(StatusCode.INTERNAL_SERVER_ERROR).json(errorDetails);
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };
+
 
 export const getBoards = async (
   req: AuthRequest,
@@ -240,43 +228,33 @@ export const updateBoard = async (
   }
 };
 
-export const deleteBoard = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
+export const deleteBoard = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { boardId } = req.params;
 
     if (!req.user?.id) {
-      res
-        .status(StatusCode.UNAUTHORIZED)
-        .json({ message: "User authentication required" });
+      res.status(StatusCode.UNAUTHORIZED).json({ message: "User authentication required" });
       return;
     }
 
     const board = await Board.findById(boardId);
-
     if (!board) {
       res.status(StatusCode.NOT_FOUND).json({ message: "Board not found" });
       return;
     }
 
     if (board.owner.toString() !== req.user.id) {
-      res
-        .status(StatusCode.FORBIDDEN)
-        .json({ message: "Only board owner can delete the board" });
+      res.status(StatusCode.FORBIDDEN).json({ message: "Only board owner can delete the board" });
       return;
     }
 
     await Task.deleteMany({ board: new Types.ObjectId(boardId) });
     await Column.deleteMany({ board: new Types.ObjectId(boardId) });
-    await BoardInvite.deleteMany({ board: new Types.ObjectId(boardId) });
+    await BoardInvite.deleteMany({ board: new Types.ObjectId(boardId) } as any); // ✅ cast fix
     await Board.findByIdAndDelete(boardId);
 
     res.status(StatusCode.OK).json({ message: "Board deleted successfully" });
   } catch {
-    res
-      .status(StatusCode.INTERNAL_SERVER_ERROR)
-      .json({ message: "Error deleting board" });
+    res.status(StatusCode.INTERNAL_SERVER_ERROR).json({ message: "Error deleting board" });
   }
 };
